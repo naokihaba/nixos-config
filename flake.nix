@@ -39,6 +39,7 @@
 
         # modules: 設定の本体。複数ファイルに分割して合成できる
         modules = [
+          home-manager.darwinModules.home-manager
           (
             { pkgs, ... }:
             {
@@ -47,6 +48,12 @@
 
               # nix-darwin のバージョン互換性の基準点（初回設定時の値を変えない）
               system.stateVersion = 6;
+
+              home-manager = {
+                useGlobalPkgs = true; # システムのpッケージをユーザーレベルでも利用可能にする
+                useUserPackages = true; # ユーザーレベルのパッケージを有効にする
+                users."naokihaba" = import ./home.nix; # ユーザーごとの設定ファイルをインポートする
+              };
             }
           )
         ];
