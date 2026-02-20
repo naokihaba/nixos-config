@@ -12,21 +12,30 @@
       # follows: nix-darwin が使う nixpkgs をこちらと共有する（重複ダウンロード防止）
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # home-manager: ユーザーレベルの設定管理ツール（nix-darwin と組み合わせて使うことが多い）
+    "home-manager" = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   # outputs: このフレークが外部に提供するものを宣言する関数
   # 引数は inputs の内容が自動で渡される
   outputs =
-    {
+    # inputs@{ ... }: すべての inputs を受け取る。必要なものだけ引数に書いてもよい
+    inputs@{
       self,
       nixpkgs,
       nix-darwin,
+      home-manager,
       ...
     }:
     {
       # darwinConfigurations: macOS マシンの設定（NixOS の nixosConfigurations に相当）
       darwinConfigurations."my-mac" = nix-darwin.lib.darwinSystem {
         system = "aarch64-darwin"; # Apple Silicon Mac
+        specialArgs = { inherit inputs; };
 
         # modules: 設定の本体。複数ファイルに分割して合成できる
         modules = [
