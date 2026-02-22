@@ -6,6 +6,9 @@
     # nixpkgs: 数万のパッケージを含む Nix 公式リポジトリ
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    # nixpkgs-stable: 安定版 nixpkgs。特定パッケージだけ stable を使いたい時に参照する
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+
     # nix-darwin: macOS を NixOS のように宣言型で管理するツール
     "nix-darwin" = {
       url = "github:nix-darwin/nix-darwin";
@@ -29,33 +32,28 @@
       nixpkgs,
       nix-darwin,
       home-manager,
+      nixpkgs-stable,
       ...
     }:
     {
       # darwinConfigurations: macOS マシンの設定（NixOS の nixosConfigurations に相当）
       darwinConfigurations."my-mac" = nix-darwin.lib.darwinSystem {
         system = "aarch64-darwin"; # Apple Silicon Mac
-        specialArgs = { inherit inputs; };
+        specialArgs = {
+          # inputs: 全 inputs をモジュールに渡す（inputs.nixpkgs 等でアクセス可能）
+          inherit inputs;
+          # pkgs-stable: stable 版 nixpkgs のパッケージセット
+          # darwin.nix や home.nix で { pkgs-stable, ... }: と受け取って使う
+          pkgs-stable = import nixpkgs-stable {
+            system = "aarch64-darwin";
+            config.allowUnfree = true; # 非フリーパッケージを許可
+          };
+        };
 
         # modules: 設定の本体。複数ファイルに分割して合成できる
         modules = [
           home-manager.darwinModules.home-manager
-          (
-            { pkgs, ... }:
-            {
-              # システム全体にインストールするパッケージ
-              environment.systemPackages = [ pkgs.git ];
-
-              # nix-darwin のバージョン互換性の基準点（初回設定時の値を変えない）
-              system.stateVersion = 6;
-
-              home-manager = {
-                useGlobalPkgs = true; # システムのpッケージをユーザーレベルでも利用可能にする
-                useUserPackages = true; # ユーザーレベルのパッケージを有効にする
-                users."naokihaba" = import ./home.nix; # ユーザーごとの設定ファイルをインポートする
-              };
-            }
-          )
+          ./darwin.nix
         ];
       };
     };
