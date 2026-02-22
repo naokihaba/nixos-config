@@ -56,5 +56,19 @@
           ./darwin.nix
         ];
       };
+
+      # devShells: `nix develop` で入る開発環境の定義
+      # "aarch64-darwin".default → Apple Silicon Mac のデフォルト開発シェル
+      devShells."aarch64-darwin".default = nixpkgs.legacyPackages."aarch64-darwin".mkShell {
+        # packages: この開発環境で使えるパッケージ（システムにはインストールされない）
+        packages = [
+          nixpkgs.legacyPackages."aarch64-darwin".nodejs
+          nixpkgs.legacyPackages."aarch64-darwin".git
+        ];
+        # shellHook: シェルに入った時に自動実行されるスクリプト
+        shellHook = ''
+          echo "開発環境に入りました"
+        '';
+      };
     };
 }
